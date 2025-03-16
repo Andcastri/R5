@@ -2,8 +2,9 @@
 FROM gradle:7.6.1-jdk17-alpine AS build
 WORKDIR /backend
 COPY backend/ .
+RUN ls -la
 RUN chmod +x gradlew
-RUN ./gradlew build --info --stacktrace
+RUN ./gradlew build --debug --scan
 
 FROM openjdk:17-jdk-slim
 WORKDIR /app
