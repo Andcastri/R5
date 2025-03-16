@@ -1,12 +1,12 @@
-# Dockerfile para la aplicación Android
+# Dockerfile para el backend Spring Boot
 FROM gradle:7.6.1-jdk17-alpine AS build
-WORKDIR /app
-COPY . .
+WORKDIR /backend
+COPY backend/ .
 RUN chmod +x gradlew
-RUN ./gradlew :app:build --info --stacktrace
+RUN ./gradlew build --info --stacktrace
 
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /app/app/build/libs/*.jar app.jar
+COPY --from=build /backend/build/libs/*.jar app.jar
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"] 
