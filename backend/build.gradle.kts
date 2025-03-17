@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.spring") version "1.9.22"
     kotlin("plugin.jpa") version "1.9.22"
+    kotlin("kapt") version "1.9.22"
 }
 
 group = "com.example"
@@ -13,9 +14,11 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
 
-repositories {
-    mavenCentral()
-    google()
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+    }
 }
 
 dependencies {
@@ -25,6 +28,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
     implementation("com.azure:azure-storage-blob:12.25.1")
     implementation("com.azure:azure-identity:1.11.1")
     runtimeOnly("org.postgresql:postgresql")
@@ -36,7 +40,7 @@ tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootBuildImage> {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
-        freeCompilerArgs += "-Xjsr305=strict"
+        freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = "17"
     }
 }

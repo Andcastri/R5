@@ -8,22 +8,26 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# Instalar Gradle
+ENV GRADLE_VERSION=8.5
+ENV GRADLE_HOME=/opt/gradle
+RUN curl -L https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -o gradle.zip && \
+    mkdir -p ${GRADLE_HOME} && \
+    unzip gradle.zip && \
+    mv gradle-${GRADLE_VERSION}/* ${GRADLE_HOME} && \
+    rm gradle.zip
+ENV PATH=$PATH:${GRADLE_HOME}/bin
+
 WORKDIR /app
 
 # Copiar archivos del proyecto
-COPY backend/gradlew .
-COPY backend/gradle gradle
 COPY backend/settings.gradle.kts .
 COPY backend/build.gradle.kts .
-RUN chmod +x ./gradlew
 
 # Mostrar información del entorno
 RUN pwd && ls -la
-RUN echo "Contenido del directorio gradle:"
-RUN ls -la gradle
-RUN echo "Contenido del directorio gradle/wrapper:"
-RUN ls -la gradle/wrapper
 RUN java -version
+RUN gradle --version
 
 # Copiar el código fuente
 COPY backend/src src
@@ -37,8 +41,7 @@ RUN echo "Contenido de settings.gradle.kts:"
 RUN cat settings.gradle.kts
 
 # Construir el proyecto
-RUN ./gradlew --version
-RUN ./gradlew clean bootJar --info --stacktrace --no-daemon --debug
+RUN gradle clean build --info --stacktrace --no-daemon --debug
 
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
