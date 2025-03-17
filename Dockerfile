@@ -17,8 +17,8 @@ RUN echo "Estructura del proyecto:" && \
     echo "Contenido de pom.xml:" && \
     cat pom.xml
 
-# Intentar el build con más información
-RUN mvn clean package -DskipTests -X
+# Intentar el build con más información y sin caché
+RUN mvn clean package -DskipTests -X -U
 
 # Imagen final
 FROM eclipse-temurin:17-jdk-alpine

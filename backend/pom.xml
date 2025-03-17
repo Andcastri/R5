@@ -66,6 +66,16 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-allopen</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-noarg</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -95,18 +105,6 @@
                     </compilerPlugins>
                     <jvmTarget>17</jvmTarget>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-allopen</artifactId>
-                        <version>${kotlin.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-noarg</artifactId>
-                        <version>${kotlin.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
