@@ -1,1 +1,8 @@
-rootProject.name = "backend" 
+rootProject.name = "backend"
+
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+} 
