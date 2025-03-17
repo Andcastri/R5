@@ -8,15 +8,18 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copiar el proyecto
-COPY backend .
+# Copiar solo los archivos necesarios para el build
+COPY backend/pom.xml .
+COPY backend/src ./src
 
-# Mostrar estructura
+# Mostrar estructura y contenido
 RUN echo "Estructura del proyecto:" && \
-    find . -type f
+    find . -type f && \
+    echo "Contenido de pom.xml:" && \
+    cat pom.xml
 
-# Intentar el build
-RUN mvn clean package -DskipTests
+# Intentar el build con más información
+RUN mvn clean package -DskipTests -X
 
 # Imagen final
 FROM eclipse-temurin:17-jdk-alpine
