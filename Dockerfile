@@ -1,11 +1,11 @@
 # Dockerfile para el backend Spring Boot
 FROM gradle:8.5-jdk17-alpine AS build
 WORKDIR /app
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle.kts .
-COPY settings.gradle.kts .
-COPY src src
+COPY backend/gradlew .
+COPY backend/gradle gradle
+COPY backend/build.gradle.kts .
+COPY backend/settings.gradle.kts .
+COPY backend/src src
 RUN ls -la
 RUN chmod +x ./gradlew
 RUN ./gradlew bootJar --info --stacktrace
