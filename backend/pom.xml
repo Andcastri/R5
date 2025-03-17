@@ -66,16 +66,6 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-allopen</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-maven-noarg</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
     </dependencies>
     
     <build>
@@ -104,22 +94,6 @@
                         <plugin>jpa</plugin>
                     </compilerPlugins>
                     <jvmTarget>17</jvmTarget>
-                    <annotationProcessorPaths>
-                        <annotationProcessorPath>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-configuration-processor</artifactId>
-                            <version>${project.parent.version}</version>
-                        </annotationProcessorPath>
-                    </annotationProcessorPaths>
-                    <kapt>
-                        <annotationProcessorPaths>
-                            <annotationProcessorPath>
-                                <groupId>org.springframework.boot</groupId>
-                                <artifactId>spring-boot-configuration-processor</artifactId>
-                                <version>${project.parent.version}</version>
-                            </annotationProcessorPath>
-                        </annotationProcessorPaths>
-                    </kapt>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -140,12 +114,6 @@
                 <version>${project.parent.version}</version>
                 <configuration>
                     <mainClass>com.example.backend.BackendApplicationKt</mainClass>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
                 </configuration>
                 <executions>
                     <execution>
