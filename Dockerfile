@@ -1,9 +1,14 @@
 # Dockerfile para el backend Spring Boot
-FROM eclipse-temurin:17-jdk-alpine AS build
-WORKDIR /app
+FROM eclipse-temurin:17 AS build
 
 # Instalar herramientas necesarias
-RUN apk add --no-cache bash
+RUN apt-get update && apt-get install -y \
+    bash \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 # Copiar archivos del proyecto
 COPY backend/gradlew .
@@ -18,6 +23,7 @@ RUN echo "Contenido del directorio gradle:"
 RUN ls -la gradle
 RUN echo "Contenido del directorio gradle/wrapper:"
 RUN ls -la gradle/wrapper
+RUN java -version
 
 # Copiar el código fuente
 COPY backend/src src
@@ -25,6 +31,10 @@ COPY backend/src src
 # Mostrar estructura del proyecto
 RUN echo "Estructura del proyecto:"
 RUN find . -type f
+RUN echo "Contenido de build.gradle.kts:"
+RUN cat build.gradle.kts
+RUN echo "Contenido de settings.gradle.kts:"
+RUN cat settings.gradle.kts
 
 # Construir el proyecto
 RUN ./gradlew --version
