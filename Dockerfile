@@ -8,9 +8,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copiar solo los archivos necesarios para el build
-COPY backend/pom.xml .
-COPY backend/src ./src
+# Copiar el proyecto completo
+COPY backend .
 
 # Mostrar estructura y contenido
 RUN echo "Estructura del proyecto:" && \
