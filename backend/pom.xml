@@ -104,6 +104,13 @@
                         <plugin>jpa</plugin>
                     </compilerPlugins>
                     <jvmTarget>17</jvmTarget>
+                    <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>${project.parent.version}</version>
+                        </annotationProcessorPath>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
