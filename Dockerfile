@@ -11,8 +11,11 @@ RUN apt-get update && \
 # Copiar el proyecto completo
 COPY backend .
 
-# Mostrar estructura y contenido
-RUN echo "Estructura del proyecto:" && \
+# Verificar estructura del proyecto
+RUN echo "Verificando estructura del proyecto..." && \
+    mkdir -p src/main/kotlin/com/example/backend && \
+    mkdir -p src/main/resources && \
+    echo "Estructura del proyecto:" && \
     find . -type f && \
     echo "Contenido de pom.xml:" && \
     cat pom.xml && \
