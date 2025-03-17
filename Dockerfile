@@ -1,11 +1,13 @@
 # Dockerfile para el backend Spring Boot
-FROM gradle:8.5-jdk17-alpine AS build
+FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
 COPY backend .
 RUN ls -la
 RUN pwd
-RUN chmod +x ./gradlew
-RUN ./gradlew clean bootJar --info --stacktrace --no-daemon
+RUN find . -type f
+RUN apk add --no-cache gradle
+RUN gradle --version
+RUN gradle clean bootJar --info --stacktrace --no-daemon
 
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
