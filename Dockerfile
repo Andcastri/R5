@@ -15,7 +15,11 @@ COPY backend .
 RUN echo "Estructura del proyecto:" && \
     find . -type f && \
     echo "Contenido de pom.xml:" && \
-    cat pom.xml
+    cat pom.xml && \
+    echo "Contenido de src/main/kotlin:" && \
+    ls -la src/main/kotlin/ && \
+    echo "Contenido de src/main/resources:" && \
+    ls -la src/main/resources/
 
 # Intentar el build con más información y sin caché
 RUN mvn clean package -DskipTests -X -U
