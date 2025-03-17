@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/slideshow
-    username: postgres
-    password: postgres
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/slideshow}
+    username: ${JDBC_DATABASE_USERNAME:postgres}
+    password: ${JDBC_DATABASE_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,10 +21,22 @@ app:
     dir: ${UPLOAD_DIR:uploads}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: never
     include-binding-errors: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
 
 logging:
   level:
