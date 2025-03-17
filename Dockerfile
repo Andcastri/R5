@@ -1,47 +1,31 @@
 # Dockerfile para el backend Spring Boot
 FROM eclipse-temurin:17 AS build
 
-# Instalar herramientas necesarias
-RUN apt-get update && apt-get install -y \
-    bash \
-    curl \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Instalar Gradle
-ENV GRADLE_VERSION=8.5
-ENV GRADLE_HOME=/opt/gradle
-RUN curl -L https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -o gradle.zip && \
-    mkdir -p ${GRADLE_HOME} && \
-    unzip gradle.zip && \
-    mv gradle-${GRADLE_VERSION}/* ${GRADLE_HOME} && \
-    rm gradle.zip
-ENV PATH=$PATH:${GRADLE_HOME}/bin
-
 WORKDIR /app
 
-# Copiar archivos del proyecto
+# Copiar solo los archivos necesarios primero para aprovechar la caché de capas
+COPY backend/gradlew .
+COPY backend/gradle gradle
 COPY backend/settings.gradle.kts .
 COPY backend/build.gradle.kts .
+
+# Dar permisos de ejecución al Gradle Wrapper
+RUN chmod +x ./gradlew
 
 # Mostrar información del entorno
 RUN pwd && ls -la
 RUN java -version
-RUN gradle --version
+RUN ./gradlew --version
 
-# Copiar el código fuente
+# Copiar el resto del código fuente
 COPY backend/src src
 
 # Mostrar estructura del proyecto
 RUN echo "Estructura del proyecto:"
 RUN find . -type f
-RUN echo "Contenido de build.gradle.kts:"
-RUN cat build.gradle.kts
-RUN echo "Contenido de settings.gradle.kts:"
-RUN cat settings.gradle.kts
 
 # Construir el proyecto
-RUN gradle clean build --info --stacktrace --no-daemon --debug
+RUN ./gradlew clean bootJar --info --stacktrace --no-daemon
 
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
