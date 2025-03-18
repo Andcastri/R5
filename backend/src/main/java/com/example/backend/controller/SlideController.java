@@ -5,6 +5,8 @@ import com.example.backend.service.SlideService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -28,15 +30,29 @@ public class SlideController {
     }
 
     @PostMapping
-    public Slide createSlide(@RequestBody Slide slide) {
-        return slideService.createSlide(slide);
+    public ResponseEntity<Slide> createSlide(
+            @RequestPart("slide") Slide slide,
+            @RequestPart("image") MultipartFile image) {
+        try {
+            Slide createdSlide = slideService.createSlide(slide, image);
+            return ResponseEntity.ok(createdSlide);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Slide> updateSlide(@PathVariable Long id, @RequestBody Slide slideDetails) {
-        return slideService.updateSlide(id, slideDetails)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Slide> updateSlide(
+            @PathVariable Long id,
+            @RequestPart("slide") Slide slideDetails,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        try {
+            return slideService.updateSlide(id, slideDetails, image)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @DeleteMapping("/{id}")
