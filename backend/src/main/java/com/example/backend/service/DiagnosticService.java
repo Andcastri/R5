@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class DiagnosticService {
@@ -22,6 +23,9 @@ public class DiagnosticService {
     private Map<String, Object> diagnosticStatus = new HashMap<>();
     private List<String> errorHistory = new ArrayList<>();
     private static final int MAX_ERROR_HISTORY = 100;
+    private int consecutiveFailures = 0;
+    private static final int MAX_CONSECUTIVE_FAILURES = 5;
+    private LocalDateTime lastSuccessfulCheck = null;
 
     @Scheduled(fixedRate = 5000) // Cada 5 segundos
     public void diagnoseAndFix() {
@@ -40,15 +44,133 @@ public class DiagnosticService {
             // Verificar conectividad
             checkConnectivity();
             
+            // Verificar estado general
+            checkGeneralHealth();
+            
             // Si todo está bien, limpiar historial de errores
             if (isSystemStable()) {
                 errorHistory.clear();
+                consecutiveFailures = 0;
+                lastSuccessfulCheck = LocalDateTime.now();
                 diagnosticStatus.put("status", "STABLE");
+            } else {
+                consecutiveFailures++;
+                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                    performEmergencyRecovery();
+                }
             }
             
         } catch (Exception e) {
             logError("Error en diagnóstico: " + e.getMessage());
             attemptRecovery(e);
+            consecutiveFailures++;
+            if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                performEmergencyRecovery();
+            }
+        }
+    }
+
+    private void checkGeneralHealth() {
+        try {
+            // Verificar tiempo desde última comprobación exitosa
+            if (lastSuccessfulCheck != null) {
+                long timeSinceLastSuccess = TimeUnit.SECONDS.between(lastSuccessfulCheck, LocalDateTime.now());
+                if (timeSinceLastSuccess > 300) { // 5 minutos
+                    logError("Tiempo sin comprobación exitosa: " + timeSinceLastSuccess + " segundos");
+                    performEmergencyRecovery();
+                }
+            }
+
+            // Verificar estado de la aplicación
+            Map<String, Object> status = monitoringService.getStatus();
+            if (!"UP".equals(status.get("status"))) {
+                logError("Estado de la aplicación no saludable: " + status.get("status"));
+                performEmergencyRecovery();
+            }
+        } catch (Exception e) {
+            logError("Error en verificación general: " + e.getMessage());
+            performEmergencyRecovery();
+        }
+    }
+
+    private void performEmergencyRecovery() {
+        logError("Iniciando recuperación de emergencia");
+        try {
+            // 1. Limpiar recursos
+            cleanupResources();
+            
+            // 2. Reiniciar conexiones
+            resetConnections();
+            
+            // 3. Verificar y recrear estructura
+            verifyAndRecreateStructure();
+            
+            // 4. Forzar recolección de basura
+            System.gc();
+            
+            // 5. Verificar estado final
+            if (isSystemStable()) {
+                logError("Recuperación de emergencia exitosa");
+                consecutiveFailures = 0;
+            } else {
+                logError("Recuperación de emergencia incompleta");
+            }
+        } catch (Exception e) {
+            logError("Error en recuperación de emergencia: " + e.getMessage());
+        }
+    }
+
+    private void cleanupResources() {
+        try {
+            // Limpiar archivos temporales
+            cleanupTempFiles();
+            
+            // Limpiar caché de la base de datos
+            jdbcTemplate.execute("VACUUM ANALYZE");
+            
+            // Limpiar memoria
+            System.gc();
+        } catch (Exception e) {
+            logError("Error limpiando recursos: " + e.getMessage());
+        }
+    }
+
+    private void resetConnections() {
+        try {
+            // Verificar y resetear conexión a la base de datos
+            jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+            
+            // Forzar reconexión si es necesario
+            if (jdbcTemplate.getDataSource() != null) {
+                jdbcTemplate.getDataSource().getConnection().close();
+            }
+        } catch (Exception e) {
+            logError("Error reseteando conexiones: " + e.getMessage());
+        }
+    }
+
+    private void verifyAndRecreateStructure() {
+        try {
+            // Verificar y recrear directorios
+            String[] requiredDirs = {"uploads", "logs", "temp"};
+            for (String dir : requiredDirs) {
+                java.io.File directory = new java.io.File(System.getProperty("user.dir"), dir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+            }
+
+            // Verificar y recrear tablas
+            List<String> requiredTables = List.of("users", "posts", "comments");
+            for (String table : requiredTables) {
+                try {
+                    jdbcTemplate.queryForObject("SELECT 1 FROM " + table + " LIMIT 1", Integer.class);
+                } catch (Exception e) {
+                    createTable(table);
+                }
+            }
+        } catch (Exception e) {
+            logError("Error verificando estructura: " + e.getMessage());
         }
     }
 
@@ -235,12 +357,22 @@ public class DiagnosticService {
     }
 
     private boolean isSystemStable() {
-        return errorHistory.isEmpty() || 
-               errorHistory.stream().anyMatch(error -> 
-                   error.contains("exitosa") || error.contains("STABLE"));
+        if (errorHistory.isEmpty()) {
+            return true;
+        }
+
+        // Verificar si hay errores recientes
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        boolean hasRecentErrors = errorHistory.stream()
+            .filter(error -> LocalDateTime.parse(error.split(" - ")[0]).isAfter(fiveMinutesAgo))
+            .anyMatch(error -> !error.contains("exitosa") && !error.contains("STABLE"));
+
+        return !hasRecentErrors;
     }
 
     public Map<String, Object> getDiagnosticStatus() {
+        diagnosticStatus.put("consecutiveFailures", consecutiveFailures);
+        diagnosticStatus.put("lastSuccessfulCheck", lastSuccessfulCheck != null ? lastSuccessfulCheck.toString() : "Nunca");
         return diagnosticStatus;
     }
 } 
