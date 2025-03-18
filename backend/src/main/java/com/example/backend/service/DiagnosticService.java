@@ -27,6 +27,7 @@ public class DiagnosticService {
     private int consecutiveFailures = 0;
     private static final int MAX_CONSECUTIVE_FAILURES = 5;
     private LocalDateTime lastSuccessfulCheck = null;
+    private boolean isEmergencyMode = false;
 
     @Scheduled(fixedRate = 5000) // Cada 5 segundos
     public void diagnoseAndFix() {
@@ -54,9 +55,11 @@ public class DiagnosticService {
                 consecutiveFailures = 0;
                 lastSuccessfulCheck = LocalDateTime.now();
                 diagnosticStatus.put("status", "STABLE");
+                isEmergencyMode = false;
             } else {
                 consecutiveFailures++;
                 if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                    isEmergencyMode = true;
                     performEmergencyRecovery();
                 }
             }
@@ -66,6 +69,7 @@ public class DiagnosticService {
             attemptRecovery(e);
             consecutiveFailures++;
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                isEmergencyMode = true;
                 performEmergencyRecovery();
             }
         }
@@ -78,6 +82,7 @@ public class DiagnosticService {
                 Duration duration = Duration.between(lastSuccessfulCheck, LocalDateTime.now());
                 if (duration.toSeconds() > 300) { // 5 minutos
                     logError("Tiempo sin comprobación exitosa: " + duration.toSeconds() + " segundos");
+                    isEmergencyMode = true;
                     performEmergencyRecovery();
                 }
             }
@@ -86,10 +91,12 @@ public class DiagnosticService {
             Map<String, Object> status = monitoringService.getStatus();
             if (!"UP".equals(status.get("status"))) {
                 logError("Estado de la aplicación no saludable: " + status.get("status"));
+                isEmergencyMode = true;
                 performEmergencyRecovery();
             }
         } catch (Exception e) {
             logError("Error en verificación general: " + e.getMessage());
+            isEmergencyMode = true;
             performEmergencyRecovery();
         }
     }
@@ -113,8 +120,14 @@ public class DiagnosticService {
             if (isSystemStable()) {
                 logError("Recuperación de emergencia exitosa");
                 consecutiveFailures = 0;
+                isEmergencyMode = false;
             } else {
                 logError("Recuperación de emergencia incompleta");
+                // Intentar reiniciar la aplicación si la recuperación falla
+                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES * 2) {
+                    logError("Intentando reiniciar la aplicación");
+                    System.exit(0); // Esto forzará un reinicio del contenedor
+                }
             }
         } catch (Exception e) {
             logError("Error en recuperación de emergencia: " + e.getMessage());
@@ -131,6 +144,22 @@ public class DiagnosticService {
             
             // Limpiar memoria
             System.gc();
+            
+            // Limpiar directorios temporales
+            String[] tempDirs = {"temp", "logs", "uploads"};
+            for (String dir : tempDirs) {
+                java.io.File directory = new java.io.File(System.getProperty("user.dir"), dir);
+                if (directory.exists()) {
+                    java.io.File[] files = directory.listFiles();
+                    if (files != null) {
+                        for (java.io.File file : files) {
+                            if (file.lastModified() < System.currentTimeMillis() - 86400000) { // 24 horas
+                                file.delete();
+                            }
+                        }
+                    }
+                }
+            }
         } catch (Exception e) {
             logError("Error limpiando recursos: " + e.getMessage());
         }
@@ -145,6 +174,9 @@ public class DiagnosticService {
             if (jdbcTemplate.getDataSource() != null) {
                 jdbcTemplate.getDataSource().getConnection().close();
             }
+            
+            // Esperar un momento para que la conexión se restablezca
+            Thread.sleep(1000);
         } catch (Exception e) {
             logError("Error reseteando conexiones: " + e.getMessage());
         }
@@ -159,6 +191,10 @@ public class DiagnosticService {
                 if (!directory.exists()) {
                     directory.mkdirs();
                 }
+                // Asegurar permisos
+                directory.setReadable(true, true);
+                directory.setWritable(true, true);
+                directory.setExecutable(true, true);
             }
 
             // Verificar y recrear tablas
@@ -374,6 +410,7 @@ public class DiagnosticService {
     public Map<String, Object> getDiagnosticStatus() {
         diagnosticStatus.put("consecutiveFailures", consecutiveFailures);
         diagnosticStatus.put("lastSuccessfulCheck", lastSuccessfulCheck != null ? lastSuccessfulCheck.toString() : "Nunca");
+        diagnosticStatus.put("emergencyMode", isEmergencyMode);
         return diagnosticStatus;
     }
 } 
