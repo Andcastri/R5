@@ -1,36 +1,29 @@
-# Etapa de build
-FROM eclipse-temurin:17-jdk AS builder
-WORKDIR /app
+FROM eclipse-temurin:17-jdk-alpine as build
+WORKDIR /workspace/app
 
-# Instalar Maven
-RUN apt-get update && \
-    apt-get install -y maven && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Copiar archivos del proyecto
+COPY backend/mvnw .
+COPY backend/.mvn .mvn
+COPY backend/pom.xml .
+COPY backend/src src
 
-# Copiar el proyecto
-COPY backend /app/backend
+# Dar permisos de ejecución al mvnw
+RUN chmod +x ./mvnw
 
-# Intentar el build
-RUN cd /app/backend && \
-    mvn clean package -DskipTests
+# Construir el proyecto
+RUN ./mvnw install -DskipTests
 
-# Etapa final
+# Imagen final
 FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
+VOLUME /tmp
+COPY --from=build /workspace/app/target/*.jar app.jar
 
-# Instalar herramientas de diagnóstico
-RUN apk add --no-cache curl wget
+# Crear directorio para uploads
+RUN mkdir -p /uploads && chmod 777 /uploads
 
-# Copiar el JAR
-COPY --from=builder /app/backend/target/*.jar app.jar
+# Variables de entorno por defecto
+ENV PORT=8080
+ENV UPLOAD_DIR=/uploads
 
-# Exponer puerto
-EXPOSE 8080
-
-# Health check mejorado
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
-
-# Comando de inicio con más información de diagnóstico
-ENTRYPOINT ["sh", "-c", "java -jar app.jar 2>&1 | tee /app/app.log"] 
+EXPOSE ${PORT}
+ENTRYPOINT ["java","-jar","/app.jar"] 
