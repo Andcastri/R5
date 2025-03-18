@@ -17,7 +17,7 @@ public class SlideService {
     private SlideRepository slideRepository;
     
     @Autowired
-    private AzureStorageService azureStorageService;
+    private StorageService storageService;
     
     public List<Slide> getAllSlides() {
         return slideRepository.findAllByOrderByOrderIndexAsc();
@@ -29,7 +29,7 @@ public class SlideService {
     
     @Transactional
     public Slide createSlide(Slide slide, MultipartFile image) throws IOException {
-        String imageUrl = azureStorageService.uploadImage(image);
+        String imageUrl = storageService.uploadImage(image);
         slide.setImageUrl(imageUrl);
         return slideRepository.save(slide);
     }
@@ -41,8 +41,8 @@ public class SlideService {
                 try {
                     // Si hay una nueva imagen, eliminar la anterior y subir la nueva
                     if (image != null && !image.isEmpty()) {
-                        azureStorageService.deleteImage(slide.getImageUrl());
-                        String newImageUrl = azureStorageService.uploadImage(image);
+                        storageService.deleteImage(slide.getImageUrl());
+                        String newImageUrl = storageService.uploadImage(image);
                         slide.setImageUrl(newImageUrl);
                     }
                     
@@ -61,7 +61,7 @@ public class SlideService {
         return slideRepository.findById(id)
             .map(slide -> {
                 try {
-                    azureStorageService.deleteImage(slide.getImageUrl());
+                    storageService.deleteImage(slide.getImageUrl());
                     slideRepository.delete(slide);
                     return true;
                 } catch (Exception e) {
