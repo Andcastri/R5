@@ -1,29 +1,39 @@
-FROM eclipse-temurin:17-jdk-alpine as build
-WORKDIR /workspace/app
+# Build stage
+FROM maven:3.8.4-openjdk-17-slim AS build
+WORKDIR /app
 
-# Copiar archivos del proyecto
-COPY backend/mvnw .
-COPY backend/.mvn .mvn
+# Copiar el pom.xml primero para aprovechar la caché de dependencias
 COPY backend/pom.xml .
-COPY backend/src src
+RUN mvn dependency:go-offline
 
-# Dar permisos de ejecución al mvnw
-RUN chmod +x ./mvnw
+# Copiar el código fuente y construir
+COPY backend/src ./src
+RUN mvn clean package -DskipTests
 
-# Construir el proyecto
-RUN ./mvnw install -DskipTests
-
-# Imagen final
+# Runtime stage
 FROM eclipse-temurin:17-jre-alpine
-VOLUME /tmp
-COPY --from=build /workspace/app/target/*.jar app.jar
+WORKDIR /app
 
-# Crear directorio para uploads
+# Instalar herramientas básicas para diagnóstico
+RUN apk add --no-cache curl
+
+# Copiar el JAR desde la etapa de build
+COPY --from=build /app/target/*.jar app.jar
+
+# Crear directorio para uploads con permisos adecuados
 RUN mkdir -p /uploads && chmod 777 /uploads
 
 # Variables de entorno por defecto
 ENV PORT=8080
 ENV UPLOAD_DIR=/uploads
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/ || exit 1
+
+# Exponer puerto
 EXPOSE ${PORT}
-ENTRYPOINT ["java","-jar","/app.jar"] 
+
+# Comando de inicio
+CMD java $JAVA_OPTS -jar app.jar 
