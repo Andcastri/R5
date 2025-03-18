@@ -1,50 +1,52 @@
 package com.example.backend.service;
 
-import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
-import com.azure.storage.blob.models.BlobHttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
 public class AzureStorageService {
 
-    @Value("${azure.storage.connection-string}")
-    private String connectionString;
+    @Value("${app.upload.dir}")
+    private String uploadDir;
 
-    @Value("${azure.storage.container-name}")
-    private String containerName;
+    public String uploadFile(MultipartFile file) throws IOException {
+        // Crear directorio de uploads si no existe
+        File uploadDirectory = new File(uploadDir);
+        if (!uploadDirectory.exists()) {
+            uploadDirectory.mkdirs();
+        }
 
-    private BlobContainerClient getContainerClient() {
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .connectionString(connectionString)
-                .buildClient();
-        return blobServiceClient.getBlobContainerClient(containerName);
+        // Generar nombre único para el archivo
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String newFilename = UUID.randomUUID().toString() + extension;
+
+        // Guardar el archivo
+        Path filePath = Paths.get(uploadDir, newFilename);
+        Files.copy(file.getInputStream(), filePath);
+
+        return newFilename;
     }
 
-    public String uploadImage(MultipartFile file) throws IOException {
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        BlobContainerClient containerClient = getContainerClient();
-        BlobClient blobClient = containerClient.getBlobClient(fileName);
-        
-        BlobHttpHeaders headers = new BlobHttpHeaders();
-        headers.setContentType(file.getContentType());
-        
-        blobClient.upload(file.getInputStream(), file.getSize(), true);
-        blobClient.setHttpHeaders(headers);
-        
-        return blobClient.getBlobUrl();
+    public byte[] downloadFile(String filename) throws IOException {
+        Path filePath = Paths.get(uploadDir, filename);
+        return Files.readAllBytes(filePath);
     }
 
-    public void deleteImage(String imageUrl) {
-        String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-        BlobContainerClient containerClient = getContainerClient();
-        BlobClient blobClient = containerClient.getBlobClient(fileName);
-        blobClient.delete();
+    public void deleteFile(String filename) throws IOException {
+        Path filePath = Paths.get(uploadDir, filename);
+        Files.deleteIfExists(filePath);
+    }
+
+    public boolean fileExists(String filename) {
+        Path filePath = Paths.get(uploadDir, filename);
+        return Files.exists(filePath);
     }
 } 
