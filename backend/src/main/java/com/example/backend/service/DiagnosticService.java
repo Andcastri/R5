@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -74,9 +75,9 @@ public class DiagnosticService {
         try {
             // Verificar tiempo desde última comprobación exitosa
             if (lastSuccessfulCheck != null) {
-                long timeSinceLastSuccess = TimeUnit.SECONDS.between(lastSuccessfulCheck, LocalDateTime.now());
-                if (timeSinceLastSuccess > 300) { // 5 minutos
-                    logError("Tiempo sin comprobación exitosa: " + timeSinceLastSuccess + " segundos");
+                Duration duration = Duration.between(lastSuccessfulCheck, LocalDateTime.now());
+                if (duration.toSeconds() > 300) { // 5 minutos
+                    logError("Tiempo sin comprobación exitosa: " + duration.toSeconds() + " segundos");
                     performEmergencyRecovery();
                 }
             }
