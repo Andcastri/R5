@@ -160,6 +160,23 @@ public class DiagnosticService {
         }
     }
 
+    private void attemptConfigRecovery() {
+        try {
+            // Intentar recrear directorios necesarios
+            String[] requiredDirs = {"uploads", "logs", "temp"};
+            for (String dir : requiredDirs) {
+                java.io.File directory = new java.io.File(System.getProperty("user.dir"), dir);
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                    logError("Directorio " + dir + " recreado exitosamente");
+                }
+            }
+            logError("Recuperación de configuración exitosa");
+        } catch (Exception e) {
+            logError("Fallo en recuperación de configuración: " + e.getMessage());
+        }
+    }
+
     private void attemptGeneralRecovery() {
         try {
             // Reiniciar servicios críticos
