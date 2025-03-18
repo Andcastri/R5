@@ -1,6 +1,6 @@
 package com.example.backend.model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 

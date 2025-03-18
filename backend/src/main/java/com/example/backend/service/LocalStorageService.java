@@ -20,6 +20,21 @@ public class LocalStorageService implements StorageService {
     private String uploadDir;
 
     @Override
+    public String uploadImage(MultipartFile file) throws IOException {
+        return uploadFile(file);
+    }
+
+    @Override
+    public void deleteImage(String imageUrl) {
+        try {
+            String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+            deleteFile(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException("Error al eliminar el archivo", e);
+        }
+    }
+
+    @Override
     public String uploadFile(MultipartFile file) throws IOException {
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
@@ -30,7 +45,7 @@ public class LocalStorageService implements StorageService {
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath);
 
-        return fileName;
+        return "/uploads/" + fileName;
     }
 
     @Override
