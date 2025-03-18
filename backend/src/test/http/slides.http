@@ -1,0 +1,54 @@
+### Variables
+@baseUrl = https://{{$processEnv RAILWAY_STATIC_URL}}/api
+@contentType = multipart/form-data; boundary=WebAppBoundary
+
+### Obtener todos los slides
+GET {{baseUrl}}/slides
+
+### Obtener un slide específico
+GET {{baseUrl}}/slides/1
+
+### Crear un nuevo slide
+POST {{baseUrl}}/slides
+Content-Type: {{contentType}}
+
+--WebAppBoundary
+Content-Disposition: form-data; name="slide"
+Content-Type: application/json
+
+{
+  "title": "Mi primer slide",
+  "description": "Esta es una descripción de prueba",
+  "orderIndex": 1
+}
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--WebAppBoundary--
+
+### Actualizar un slide
+PUT {{baseUrl}}/slides/1
+Content-Type: {{contentType}}
+
+--WebAppBoundary
+Content-Disposition: form-data; name="slide"
+Content-Type: application/json
+
+{
+  "title": "Slide actualizado",
+  "description": "Descripción actualizada",
+  "orderIndex": 2
+}
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--WebAppBoundary--
+
+### Eliminar un slide
+DELETE {{baseUrl}}/slides/1 
